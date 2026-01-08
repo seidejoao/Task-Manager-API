@@ -5,17 +5,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
+//@AllArgsConstructor
 @NoArgsConstructor
 public class Task {
     @MongoId
     private String id;
     private String title;
     private String description;
-    private LocalDate start;
-    private LocalDate end;
+    private LocalDateTime start;
+    private LocalDateTime end;
     private boolean completed = false;
 }

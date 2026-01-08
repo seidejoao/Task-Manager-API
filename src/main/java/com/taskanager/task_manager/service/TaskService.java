@@ -5,15 +5,21 @@ import com.taskanager.task_manager.repository.TaskRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
 public class TaskService {
     private final TaskRepository taskRepository;
 
+    public Task findById(String taskId){
+        return taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Task doesn't exist!"));
+    }
+
     public Task addTask(Task task){
-        try{
+        try {
             if(task.getTitle() == null || task.getTitle().trim().isBlank()){
                 throw new RuntimeException("Task title CANNOT be null/blank");
             } else{
@@ -23,9 +29,9 @@ public class TaskService {
                 task.setDescription(task.getDescription().trim());
             }
             if(task.getStart() == null) {
-                task.setStart(LocalDate.now());
+                task.setStart(LocalDateTime.now());
             }
-            if(task.getEnd() == null || task.getEnd().isBefore(LocalDate.now())){
+            if(task.getEnd() == null || task.getEnd().isBefore(LocalDateTime.now())){
                 throw new RuntimeException("Task end date CANNOT be before now");
             }
 
@@ -35,29 +41,69 @@ public class TaskService {
         }
     }
 
-    public Task completeTask(Task task){
+    public Task completeTask(String taskId){
         try {
-            Task existingTask = taskRepository.findById(task.getId()).orElseThrow(() -> new RuntimeException("Task doesn't exist!"));
+            Task existingTask = findById(taskId);
 
             existingTask.setCompleted(true);
 
-            return existingTask;
+            return taskRepository.save(existingTask);
         } catch (RuntimeException e) {
             throw new RuntimeException(e.getMessage());
         }
     }
 
-    public Task edit(String id, Task task){
-        try {
-            Task existingTask = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("Task doesn't exist!"));
+    public List<Task> getAllTasks(){
+        try{
+            return taskRepository.findAll();
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 
-            if(task.getTitle() != null && task.getTitle().trim().isBlank()){
-                existingTask.setTitle(task.getTitle());
+    public List<Task> getUncompletedTasks(){
+        try {
+            List<Task> uncompletedTasks = new ArrayList<>();
+
+            for(Task task : taskRepository.findAll()){
+                if(!task.isCompleted()){
+                    uncompletedTasks.add(task);
+                }
             }
-            if(task.getDescription() != null && task.getDescription().trim().isBlank()){
-                existingTask.setDescription(task.getDescription());
+
+            return uncompletedTasks;
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public List<Task> getCompletedTasks(){
+        try {
+            List<Task> completedTasks = new ArrayList<>();
+
+            for(Task task : taskRepository.findAll()){
+                if(task.isCompleted()){
+                    completedTasks.add(task);
+                }
             }
-            if(task.getEnd() != null && task.getEnd().isAfter(LocalDate.now())){
+
+            return completedTasks;
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Task edit(Task task){
+        try {
+            Task existingTask = findById(task.getId());
+
+            if(task.getTitle() != null && !task.getTitle().trim().isBlank()){
+                existingTask.setTitle(task.getTitle().trim());
+            }
+            if(task.getDescription() != null && !task.getDescription().trim().isBlank()){
+                existingTask.setDescription(task.getDescription().trim());
+            }
+            if(task.getEnd() != null && !task.getEnd().isAfter(LocalDateTime.now())){
                 existingTask.setEnd(task.getEnd());
             }
 
@@ -67,7 +113,7 @@ public class TaskService {
         }
     }
 
-    public void deleteById(String id){
+    public void deleteTaskById(String id){
         try {
             taskRepository.deleteById(id);
         } catch (RuntimeException e) {
